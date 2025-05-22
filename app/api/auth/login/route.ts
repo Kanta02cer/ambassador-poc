@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// 簡易JWT生成（本番では jsonwebtoken ライブラリ使用）
-function generateToken(user: any): string {
-  return `dummy-jwt-${user.id}-${Date.now()}`;
-}
-
-// メモリ上のユーザーデータ
-const users: Array<{
+// ユーザー型定義
+interface User {
   id: number;
   email: string;
   password: string;
   name: string;
   role: string;
   createdAt: string;
-}> = [
+}
+
+// 簡易JWT生成（本番では jsonwebtoken ライブラリ使用）
+function generateToken(user: User): string {
+  return `dummy-jwt-${user.id}-${Date.now()}`;
+}
+
+// メモリ上のユーザーデータ
+const users: User[] = [
   {
     id: 1,
     email: "student@test.com",
@@ -73,6 +76,7 @@ export async function POST(request: NextRequest) {
     const accessToken = generateToken(user);
 
     // レスポンス（パスワードは除外）
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userResponse } = user;
 
     return NextResponse.json({
@@ -81,7 +85,7 @@ export async function POST(request: NextRequest) {
       user: userResponse,
     }, { status: 200 });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       statusCode: 500,
       message: 'Internal server error',

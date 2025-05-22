@@ -51,7 +51,7 @@ export default function LoginPage() {
       } else {
         router.push("/");
       }
-    } catch (e) {
+    } catch {
       setServerError("サーバーエラーが発生しました");
     }
   };

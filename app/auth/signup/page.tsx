@@ -49,7 +49,7 @@ export default function SignupPage() {
       } else {
         setSuccess(true);
       }
-    } catch (e) {
+    } catch {
       setServerError("サーバーエラーが発生しました");
     }
   };

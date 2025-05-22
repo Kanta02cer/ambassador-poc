@@ -42,16 +42,17 @@ export async function POST(request: NextRequest) {
     const { email, password, name, role } = await request.json();
 
     // バリデーション
-    if (!email || !password || !name || !role) {
+    const missingFields = [];
+    if (!email) missingFields.push({ field: 'email', message: 'Email is required' });
+    if (!password) missingFields.push({ field: 'password', message: 'Password is required' });
+    if (!name) missingFields.push({ field: 'name', message: 'Name is required' });
+    if (!role) missingFields.push({ field: 'role', message: 'Role is required' });
+    
+    if (missingFields.length > 0) {
       return NextResponse.json({
         statusCode: 400,
         message: 'Validation failed',
-        errors: [
-          { field: 'email', message: 'Email is required' },
-          { field: 'password', message: 'Password is required' },
-          { field: 'name', message: 'Name is required' },
-          { field: 'role', message: 'Role is required' },
-        ].filter(err => !{ email, password, name, role }[err.field as keyof typeof { email: any, password: any, name: any, role: any }])
+        errors: missingFields
       }, { status: 400 });
     }
 
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
     users.push(newUser);
 
     // レスポンス（パスワードは除外）
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userResponse } = newUser;
     
     return NextResponse.json({
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
       user: userResponse,
     }, { status: 201 });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       statusCode: 500,
       message: 'Internal server error',
