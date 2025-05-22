@@ -1,102 +1,228 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    // ログイン状態をチェック
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      // JWTトークンからユーザー情報を取得してリダイレクト
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userRole = payload.role || payload.user?.role;
+        
+        switch (userRole) {
+          case 'student':
+            router.push('/student/dashboard');
+            return;
+          case 'company':
+            router.push('/company/dashboard');
+            return;
+          case 'admin':
+            router.push('/admin/dashboard');
+            return;
+          default:
+            // 不明なロールの場合はログアウト
+            localStorage.removeItem('accessToken');
+            break;
+        }
+      } catch {
+        // トークンが無効な場合はログアウト
+        localStorage.removeItem('accessToken');
+      }
+    }
+    setIsLoading(false);
+  }, [router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">読み込み中...</p>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      {/* ヘッダー */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-blue-600">
+                日本学生アンバサダー協議会
+              </h1>
+            </div>
+            <nav className="flex space-x-4">
+              <Link 
+                href="/auth/login" 
+                className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md transition"
+              >
+                ログイン
+              </Link>
+              <Link 
+                href="/auth/signup" 
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+              >
+                新規登録
+              </Link>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {/* メインコンテンツ */}
+      <main>
+        {/* ヒーローセクション */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              学生と企業をつなぐ<br />
+              <span className="text-blue-600">アンバサダープラットフォーム</span>
+            </h2>
+            <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+              企業のアンバサダープログラムに参加し、実践的な経験を積みながら
+              信頼性の高いデジタルバッジを取得できる新しいプラットフォームです。
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                href="/auth/signup?role=student" 
+                className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
+              >
+                学生として始める
+              </Link>
+              <Link 
+                href="/auth/signup?role=company" 
+                className="border border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-50 transition"
+              >
+                企業として参加する
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* 特徴セクション */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
+              プラットフォームの特徴
+            </h3>
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* 学生向け */}
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold text-gray-900 mb-2">学生向け</h4>
+                <p className="text-gray-600">
+                  実践的なアンバサダー活動を通じて経験を積み、
+                  信頼性の高いデジタルバッジを取得できます。
+                </p>
+              </div>
+
+              {/* 企業向け */}
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h2M7 7h10M7 11h10M7 15h10" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold text-gray-900 mb-2">企業向け</h4>
+                <p className="text-gray-600">
+                  優秀な学生アンバサダーを効率的に募集・管理し、
+                  ブランド価値向上につなげることができます。
+                </p>
+              </div>
+
+              {/* 信頼性 */}
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold text-gray-900 mb-2">信頼性の保証</h4>
+                <p className="text-gray-600">
+                  協議会による厳格な承認プロセスにより、
+                  バッジの信頼性と価値を担保しています。
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* フローセクション */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
+              ご利用の流れ
+            </h3>
+            <div className="grid md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+                <h4 className="font-semibold mb-2">アカウント登録</h4>
+                <p className="text-sm text-gray-600">学生または企業として登録</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+                <h4 className="font-semibold mb-2">プログラム参加</h4>
+                <p className="text-sm text-gray-600">企業のプログラムに応募・選考</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+                <h4 className="font-semibold mb-2">活動実施</h4>
+                <p className="text-sm text-gray-600">アンバサダー活動を実践</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">4</div>
+                <h4 className="font-semibold mb-2">バッジ取得</h4>
+                <p className="text-sm text-gray-600">協議会認定のバッジを取得</p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* フッター */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div>
+              <h5 className="text-lg font-semibold mb-4">日本学生アンバサダー協議会</h5>
+              <p className="text-gray-400">
+                学生と企業をつなぐアンバサダープラットフォーム
+              </p>
+            </div>
+            <div>
+              <h6 className="font-semibold mb-4">リンク</h6>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/about" className="hover:text-white transition">協議会について</Link></li>
+                <li><Link href="/terms" className="hover:text-white transition">利用規約</Link></li>
+                <li><Link href="/privacy" className="hover:text-white transition">プライバシーポリシー</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h6 className="font-semibold mb-4">お問い合わせ</h6>
+              <p className="text-gray-400">
+                support@ambassador-council.jp
+              </p>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 日本学生アンバサダー協議会. All rights reserved.</p>
+          </div>
+        </div>
       </footer>
     </div>
   );
