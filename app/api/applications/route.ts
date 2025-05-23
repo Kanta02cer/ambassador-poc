@@ -3,6 +3,7 @@ import { prisma } from '../../../src/lib/prisma';
 import { verifyToken, extractTokenFromHeader } from '../../../src/lib/auth';
 import { Prisma } from '../../../src/generated/prisma';
 import { sendApplicationNotificationEmail } from '../../../src/lib/email';
+import { notificationManager } from '../../../src/lib/websocket-server';
 
 // 応募一覧取得
 export async function GET(request: NextRequest) {
@@ -254,30 +255,67 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // メール通知を送信（エラーが発生してもアプリケーション作成は継続）
-    try {
-      // 学生情報を取得
-      const student = await prisma.user.findUnique({
-        where: { id: application.studentId },
-        include: { studentProfile: true }
-      });
+    // 学生情報を取得
+    const student = await prisma.user.findUnique({
+      where: { id: application.studentId },
+      include: { studentProfile: true }
+    });
+    
+    // 企業ユーザー情報を取得
+    const companyUser = await prisma.user.findUnique({
+      where: { id: program.company.userId },
+    });
+
+    if (student && companyUser) {
+      const studentName = `${student.studentProfile?.firstName || ''} ${student.studentProfile?.lastName || ''}`.trim() || '学生';
       
-      // 企業ユーザー情報を取得
-      const companyUser = await prisma.user.findUnique({
-        where: { id: program.company.userId },
-      });
-      
-      if (student && companyUser) {
-        const studentName = `${student.studentProfile?.firstName || ''} ${student.studentProfile?.lastName || ''}`.trim() || '学生';
+      // メール通知を送信（エラーが発生してもアプリケーション作成は継続）
+      try {
         await sendApplicationNotificationEmail(
           companyUser.email,
           studentName,
           program.title,
           application.id
         );
+      } catch (emailError) {
+        console.error('Failed to send notification email:', emailError);
       }
-    } catch (emailError) {
-      console.error('Failed to send notification email:', emailError);
+
+      // 🔔 リアルタイム通知を送信
+      try {
+        // 企業への通知
+        notificationManager.sendUserNotification(
+          companyUser.id,
+          'APPLICATION_SUBMITTED',
+          '新しい応募があります',
+          `${studentName}さんから「${program.title}」プログラムに応募がありました`,
+          'high',
+          {
+            applicationId: application.id,
+            programId: program.id,
+            studentName,
+            url: `/company/applications/${application.id}`
+          }
+        );
+
+        // 学生への確認通知
+        notificationManager.sendUserNotification(
+          student.id,
+          'APPLICATION_SUBMITTED',
+          '応募を受け付けました',
+          `「${program.title}」への応募が正常に提出されました`,
+          'medium',
+          {
+            applicationId: application.id,
+            programId: program.id,
+            url: `/student/applications/${application.id}`
+          }
+        );
+
+        console.log('📤 Real-time notifications sent for application:', application.id);
+      } catch (notificationError) {
+        console.error('Failed to send real-time notifications:', notificationError);
+      }
     }
 
     return NextResponse.json({

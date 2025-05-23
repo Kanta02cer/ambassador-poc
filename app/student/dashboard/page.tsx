@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import NotificationCenter from '../../../src/components/NotificationCenter';
+import DevNotificationTester from '../../../src/components/DevNotificationTester';
 
 interface DashboardData {
   user: {
@@ -189,6 +191,7 @@ export default function StudentDashboard() {
               <Link href="/student/applications" className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md transition">
                 応募管理
               </Link>
+              <NotificationCenter />
               <button 
                 onClick={handleLogout}
                 className="text-gray-600 hover:text-red-600 px-3 py-2 rounded-md transition"
@@ -343,6 +346,9 @@ export default function StudentDashboard() {
           </div>
         </div>
       </main>
+
+      {/* 開発モード用通知テスター */}
+      <DevNotificationTester />
     </div>
   );
 } 
