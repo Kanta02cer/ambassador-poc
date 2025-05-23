@@ -114,9 +114,6 @@ Prisma.NullTypes = {
  */
 
 exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
-  ReadUncommitted: 'ReadUncommitted',
-  ReadCommitted: 'ReadCommitted',
-  RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 });
 
@@ -137,15 +134,14 @@ exports.Prisma.StudentProfileScalarFieldEnum = {
   lastName: 'lastName',
   phoneNumber: 'phoneNumber',
   university: 'university',
-  facultyDepartment: 'facultyDepartment',
+  major: 'major',
   graduationYear: 'graduationYear',
+  gpa: 'gpa',
   bio: 'bio',
   skills: 'skills',
   profileImage: 'profileImage',
   portfolio: 'portfolio',
   linkedinUrl: 'linkedinUrl',
-  twitterUrl: 'twitterUrl',
-  instagramUrl: 'instagramUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -179,22 +175,20 @@ exports.Prisma.AdminProfileScalarFieldEnum = {
 
 exports.Prisma.ProgramScalarFieldEnum = {
   id: 'id',
+  companyId: 'companyId',
   title: 'title',
   description: 'description',
   requirements: 'requirements',
   responsibilities: 'responsibilities',
   benefits: 'benefits',
-  duration: 'duration',
-  location: 'location',
   applicationStartDate: 'applicationStartDate',
   applicationEndDate: 'applicationEndDate',
-  programStartDate: 'programStartDate',
-  programEndDate: 'programEndDate',
+  startDate: 'startDate',
+  endDate: 'endDate',
   maxParticipants: 'maxParticipants',
   status: 'status',
   tags: 'tags',
   isPublic: 'isPublic',
-  companyId: 'companyId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -248,11 +242,6 @@ exports.Prisma.BadgeRequestScalarFieldEnum = {
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
-};
-
-exports.Prisma.QueryMode = {
-  default: 'default',
-  insensitive: 'insensitive'
 };
 
 exports.Prisma.NullsOrder = {

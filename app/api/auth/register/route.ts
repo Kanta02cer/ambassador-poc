@@ -102,6 +102,18 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // 開発環境では詳細なエラーメッセージを返す
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json(
+        { 
+          error: 'ユーザー登録に失敗しました',
+          details: error instanceof Error ? error.message : String(error)
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'ユーザー登録に失敗しました' },
       { status: 500 }

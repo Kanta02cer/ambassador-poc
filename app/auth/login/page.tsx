@@ -42,11 +42,11 @@ export default function LoginPage() {
       localStorage.setItem("accessToken", result.accessToken);
       
       // ユーザー種別に応じてリダイレクト
-      if (result.user.role === "student") {
+      if (result.user.role === "STUDENT") {
         router.push("/student/dashboard");
-      } else if (result.user.role === "company") {
+      } else if (result.user.role === "COMPANY") {
         router.push("/company/dashboard");
-      } else if (result.user.role === "admin") {
+      } else if (result.user.role === "ADMIN") {
         router.push("/admin/dashboard");
       } else {
         router.push("/");
@@ -126,9 +126,9 @@ export default function LoginPage() {
         {/* デモ用のテストアカウント情報 */}
         <div className="mt-6 p-3 bg-gray-100 rounded text-sm">
           <p className="font-medium text-gray-700 mb-1">テスト用アカウント：</p>
-          <p className="text-gray-600">学生: student@test.com / password123</p>
-          <p className="text-gray-600">企業: company@test.com / password123</p>
-          <p className="text-gray-600">管理者: admin@test.com / password123</p>
+          <p className="text-gray-600">学生: success-test@example.com / password123</p>
+          <p className="text-gray-600">企業: company@example.com / password123</p>
+          <p className="text-gray-600">管理者: admin@example.com / password123</p>
         </div>
       </div>
     </div>

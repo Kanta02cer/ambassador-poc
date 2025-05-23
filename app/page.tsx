@@ -18,13 +18,13 @@ export default function Home() {
         const userRole = payload.role || payload.user?.role;
         
         switch (userRole) {
-          case 'student':
+          case 'STUDENT':
             router.push('/student/dashboard');
             return;
-          case 'company':
+          case 'COMPANY':
             router.push('/company/dashboard');
             return;
-          case 'admin':
+          case 'ADMIN':
             router.push('/admin/dashboard');
             return;
           default:

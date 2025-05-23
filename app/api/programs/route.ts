@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search } },
+        { description: { contains: search } },
       ];
     }
 
@@ -122,12 +122,10 @@ export async function POST(request: NextRequest) {
       requirements,
       responsibilities,
       benefits,
-      duration,
-      location,
       applicationStartDate,
       applicationEndDate,
-      programStartDate,
-      programEndDate,
+      startDate,
+      endDate,
       maxParticipants,
       tags,
       status = 'DRAFT',
@@ -149,14 +147,12 @@ export async function POST(request: NextRequest) {
         requirements,
         responsibilities,
         benefits,
-        duration,
-        location,
         applicationStartDate: applicationStartDate ? new Date(applicationStartDate) : null,
         applicationEndDate: applicationEndDate ? new Date(applicationEndDate) : null,
-        programStartDate: programStartDate ? new Date(programStartDate) : null,
-        programEndDate: programEndDate ? new Date(programEndDate) : null,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
         maxParticipants,
-        tags: tags || [],
+        tags: JSON.stringify(tags || []),
         status,
         companyId: user.companyProfile.id,
       },

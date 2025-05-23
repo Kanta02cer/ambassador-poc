@@ -10,6 +10,9 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     const token = extractTokenFromHeader(authHeader);
     
+    console.log('Auth header:', authHeader);
+    console.log('Extracted token:', token);
+    
     if (!token) {
       return NextResponse.json(
         { error: '認証が必要です' },
@@ -18,6 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     const payload = verifyToken(token);
+    console.log('Token payload:', payload);
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -130,6 +134,9 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     const token = extractTokenFromHeader(authHeader);
     
+    console.log('Auth header:', authHeader);
+    console.log('Extracted token:', token);
+    
     if (!token) {
       return NextResponse.json(
         { error: '認証が必要です' },
@@ -138,6 +145,7 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = verifyToken(token);
+    console.log('Token payload:', payload);
     
     // 学生のみが応募可能
     if (payload.role !== 'STUDENT') {
@@ -171,6 +179,7 @@ export async function POST(request: NextRequest) {
         company: {
           select: {
             companyName: true,
+            userId: true,
           },
         },
       },
@@ -243,45 +252,30 @@ export async function POST(request: NextRequest) {
         availableStartDate: availableStartDate ? new Date(availableStartDate) : null,
         status: 'PENDING',
       },
-      include: {
-        program: {
-          select: {
-            title: true,
-            company: {
-              select: {
-                companyName: true,
-                user: {
-                  select: {
-                    email: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        student: {
-          select: {
-            email: true,
-            studentProfile: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-      },
     });
 
     // メール通知を送信（エラーが発生してもアプリケーション作成は継続）
     try {
-      const studentName = `${application.student.studentProfile?.firstName} ${application.student.studentProfile?.lastName}`;
-      await sendApplicationNotificationEmail(
-        application.program.company.user.email,
-        studentName,
-        application.program.title,
-        application.id
-      );
+      // 学生情報を取得
+      const student = await prisma.user.findUnique({
+        where: { id: application.studentId },
+        include: { studentProfile: true }
+      });
+      
+      // 企業ユーザー情報を取得
+      const companyUser = await prisma.user.findUnique({
+        where: { id: program.company.userId },
+      });
+      
+      if (student && companyUser) {
+        const studentName = `${student.studentProfile?.firstName || ''} ${student.studentProfile?.lastName || ''}`.trim() || '学生';
+        await sendApplicationNotificationEmail(
+          companyUser.email,
+          studentName,
+          program.title,
+          application.id
+        );
+      }
     } catch (emailError) {
       console.error('Failed to send notification email:', emailError);
     }
@@ -293,6 +287,18 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Application creation error:', error);
+    
+    // 開発環境では詳細なエラーメッセージを返す
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json(
+        { 
+          error: '応募の作成に失敗しました',
+          details: error instanceof Error ? error.message : String(error)
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: '応募の作成に失敗しました' },
       { status: 500 }

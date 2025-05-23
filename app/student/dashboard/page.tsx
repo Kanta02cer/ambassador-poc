@@ -46,7 +46,7 @@ export default function StudentDashboard() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userRole = payload.role || payload.user?.role;
         
-        if (userRole !== 'student') {
+        if (userRole !== 'STUDENT') {
           router.push('/');
           return false;
         }
@@ -62,64 +62,56 @@ export default function StudentDashboard() {
       if (!checkAuth()) return;
 
       try {
-        // TODO: 実際のAPI実装後に以下のコメントアウトを解除
-        // const token = localStorage.getItem('accessToken');
-        // const headers = { Authorization: `Bearer ${token}` };
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          throw new Error('No access token found');
+        }
         
-        // const [userRes, applicationsRes, programsRes] = await Promise.all([
-        //   fetch('/api/users/me', { headers }),
-        //   fetch('/api/applications/student/me', { headers }),
-        //   fetch('/api/programs?limit=5&sort=new', { headers })
-        // ]);
+        const headers = { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+        
+        const [applicationsRes, programsRes] = await Promise.all([
+          fetch('/api/applications', { headers }),
+          fetch('/api/programs?limit=5', { headers })
+        ]);
 
-        // const user = await userRes.json();
-        // const applications = await applicationsRes.json();
-        // const programs = await programsRes.json();
+        if (!applicationsRes.ok || !programsRes.ok) {
+          throw new Error('API request failed');
+        }
 
-        // 仮のデータ（実際のAPI実装後に削除）
-        const mockData: DashboardData = {
+        const applicationsData = await applicationsRes.json();
+        const programsData = await programsRes.json();
+
+        // JWTトークンからユーザー情報を取得
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        const dashboardData: DashboardData = {
           user: {
-            id: 1,
-            name: 'テスト学生',
-            email: 'student@test.com',
-            university: 'テスト大学',
-            badgeCount: 0
+            id: payload.id,
+            name: `${payload.firstName || ''} ${payload.lastName || ''}`.trim() || 'ユーザー',
+            email: payload.email,
+            university: 'テスト大学', // プロフィールAPIから取得予定
+            badgeCount: 0 // バッジAPIから取得予定
           },
-          applications: [
-            {
-              id: 1,
-              programTitle: 'デジタルマーケティングアンバサダー',
-              companyName: 'テクノロジー株式会社',
-              appliedAt: '2024-01-15',
-              status: 'under_review'
-            },
-            {
-              id: 2,
-              programTitle: 'SNS運用アンバサダー',
-              companyName: 'スタートアップ企業',
-              appliedAt: '2024-01-10',
-              status: 'accepted'
-            }
-          ],
-          recommendedPrograms: [
-            {
-              id: 3,
-              title: 'ブランドアンバサダープログラム',
-              companyName: '大手商社',
-              description: '新ブランドの認知度向上を目指すアンバサダー活動',
-              applicationEndDate: '2024-02-28'
-            },
-            {
-              id: 4,
-              title: 'IT業界学生アンバサダー',
-              companyName: 'IT企業',
-              description: '学生向けIT教育プログラムの普及活動',
-              applicationEndDate: '2024-03-15'
-            }
-          ]
+          applications: applicationsData.applications?.map((app: any) => ({
+            id: app.id,
+            programTitle: app.program?.title || 'プログラム名未取得',
+            companyName: app.program?.company?.companyName || '企業名未取得',
+            appliedAt: new Date(app.createdAt).toLocaleDateString('ja-JP'),
+            status: app.status
+          })) || [],
+          recommendedPrograms: programsData.programs?.slice(0, 5).map((program: any) => ({
+            id: program.id,
+            title: program.title,
+            companyName: program.company?.companyName || '企業名未取得',
+            description: program.description,
+            applicationEndDate: program.applicationEndDate ? new Date(program.applicationEndDate).toLocaleDateString('ja-JP') : undefined
+          })) || []
         };
 
-        setDashboardData(mockData);
+        setDashboardData(dashboardData);
       } catch (err) {
         setError('データの取得に失敗しました');
         console.error('Dashboard data fetch error:', err);

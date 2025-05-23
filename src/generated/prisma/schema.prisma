@@ -10,8 +10,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // ユーザーテーブル（学生、企業、管理者）
@@ -47,28 +47,25 @@ enum UserRole {
 
 // 学生プロフィール
 model StudentProfile {
-  id                Int      @id @default(autoincrement())
-  userId            Int      @unique
-  firstName         String
-  lastName          String
-  phoneNumber       String?
-  university        String?
-  facultyDepartment String?
-  graduationYear    Int?
-  bio               String?
-  skills            String[] // スキルタグの配列
-  profileImage      String?
-  portfolio         String? // ポートフォリオURL
-  linkedinUrl       String?
-  twitterUrl        String?
-  instagramUrl      String?
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName      String
+  lastName       String
+  phoneNumber    String?
+  university     String
+  major          String?
+  graduationYear Int?
+  gpa            Float?
+  bio            String?
+  skills         String? // スキルタグの配列をJSONとして保存
+  profileImage   String?
+  portfolio      String?
+  linkedinUrl    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("student_profiles")
 }
 
 // 企業プロフィール
@@ -113,32 +110,33 @@ model AdminProfile {
 
 // アンバサダープログラム
 model Program {
-  id                   Int           @id @default(autoincrement())
+  id        Int            @id @default(autoincrement())
+  companyId Int
+  company   CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
   title                String
   description          String
   requirements         String? // 応募要件
   responsibilities     String? // 業務内容
-  benefits             String? // 特典・報酬
-  duration             String? // 期間
-  location             String? // 勤務地・活動地域
+  benefits             String? // 特典・給与
   applicationStartDate DateTime?
   applicationEndDate   DateTime?
-  programStartDate     DateTime?
-  programEndDate       DateTime?
+  startDate            DateTime?
+  endDate              DateTime?
   maxParticipants      Int?
   status               ProgramStatus @default(DRAFT)
-  tags                 String[] // プログラムタグ
+  tags                 String? // プログラムタグをJSONとして保存
   isPublic             Boolean       @default(true)
 
-  companyId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  company      CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
   applications Application[]
   badges       Badge[]
 
-  @@map("programs")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+  @@index([isPublic])
 }
 
 // プログラム状態

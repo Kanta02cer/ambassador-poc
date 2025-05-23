@@ -122,6 +122,19 @@ export const sendEmail = async (config: EmailConfig): Promise<boolean> => {
     const transporter = createTransporter();
     
     if (!transporter) {
+      // 開発環境ではメール内容をログに出力
+      if (process.env.NODE_ENV === 'development') {
+        console.log('\n=== EMAIL SIMULATION ===');
+        console.log('TO:', config.to);
+        console.log('SUBJECT:', config.subject);
+        console.log('TEXT:', config.text);
+        if (config.html) {
+          console.log('HTML LENGTH:', config.html.length, 'characters');
+        }
+        console.log('========================\n');
+        return true; // 開発環境では成功として扱う
+      }
+      
       console.log('Email sending skipped: SMTP not configured');
       return false;
     }
