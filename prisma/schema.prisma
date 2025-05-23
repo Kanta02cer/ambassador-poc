@@ -1,0 +1,241 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ユーザーテーブル（学生、企業、管理者）
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 学生プロフィール
+  studentProfile StudentProfile?
+  // 企業プロフィール
+  companyProfile CompanyProfile?
+  // 管理者プロフィール
+  adminProfile   AdminProfile?
+
+  // リレーション
+  applications   Application[]
+  badgeRequests  BadgeRequest[]
+
+  @@map("users")
+}
+
+// ユーザーロール
+enum UserRole {
+  STUDENT
+  COMPANY
+  ADMIN
+}
+
+// 学生プロフィール
+model StudentProfile {
+  id           Int     @id @default(autoincrement())
+  userId       Int     @unique
+  firstName    String
+  lastName     String
+  phoneNumber  String?
+  university   String?
+  facultyDepartment String?
+  graduationYear Int?
+  bio          String?
+  skills       String[] // スキルタグの配列
+  profileImage String?
+  portfolio    String? // ポートフォリオURL
+  linkedinUrl  String?
+  twitterUrl   String?
+  instagramUrl String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("student_profiles")
+}
+
+// 企業プロフィール
+model CompanyProfile {
+  id               Int     @id @default(autoincrement())
+  userId           Int     @unique
+  companyName      String
+  industry         String?
+  companySize      String?
+  website          String?
+  description      String?
+  logoUrl          String?
+  contactEmail     String?
+  contactPhone     String?
+  address          String?
+  foundedYear      Int?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programs Program[]
+
+  @@map("company_profiles")
+}
+
+// 管理者プロフィール
+model AdminProfile {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique
+  firstName String
+  lastName  String
+  position  String? // 協議会での役職
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_profiles")
+}
+
+// アンバサダープログラム
+model Program {
+  id                Int      @id @default(autoincrement())
+  title             String
+  description       String
+  requirements      String?  // 応募要件
+  responsibilities  String?  // 業務内容
+  benefits          String?  // 特典・報酬
+  duration          String?  // 期間
+  location          String?  // 勤務地・活動地域
+  applicationStartDate DateTime?
+  applicationEndDate   DateTime?
+  programStartDate     DateTime?
+  programEndDate       DateTime?
+  maxParticipants      Int?
+  status            ProgramStatus @default(DRAFT)
+  tags              String[] // プログラムタグ
+  isPublic          Boolean  @default(true)
+  
+  companyId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company      CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications Application[]
+  badges       Badge[]
+
+  @@map("programs")
+}
+
+// プログラム状態
+enum ProgramStatus {
+  DRAFT       // 下書き
+  PUBLISHED   // 公開中
+  CLOSED      // 応募締切
+  ONGOING     // 実施中
+  COMPLETED   // 完了
+  CANCELLED   // 中止
+}
+
+// 応募情報
+model Application {
+  id               Int               @id @default(autoincrement())
+  motivation       String            // 志望動機
+  experience       String?           // 関連経験
+  portfolioUrl     String?          // ポートフォリオURL
+  availableStartDate DateTime?        // 開始可能日
+  status           ApplicationStatus @default(PENDING)
+  rejectionReason  String?          // 不採用理由
+  interviewDate    DateTime?        // 面接日時
+  notes            String?          // 企業側メモ
+  
+  studentId Int
+  programId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student User    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  // 複合ユニーク制約（同じ学生が同じプログラムに複数回応募できない）
+  @@unique([studentId, programId])
+  @@map("applications")
+}
+
+// 応募状態
+enum ApplicationStatus {
+  PENDING              // 申請中
+  UNDER_REVIEW         // 選考中
+  SHORTLISTED          // 書類通過
+  INTERVIEW_SCHEDULED  // 面接予定
+  ACCEPTED             // 採用
+  REJECTED_BY_COMPANY  // 企業による不採用
+  WITHDRAWN_BY_STUDENT // 学生による辞退
+}
+
+// バッジ
+model Badge {
+  id          Int      @id @default(autoincrement())
+  badgeType   String   // バッジタイプ
+  title       String   // バッジタイトル
+  description String?  // バッジ説明
+  imageUrl    String?  // バッジ画像URL
+  criteria    String?  // 取得条件
+  
+  programId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  program      Program        @relation(fields: [programId], references: [id], onDelete: Cascade)
+  badgeRequests BadgeRequest[]
+
+  @@map("badges")
+}
+
+// バッジ発行申請
+model BadgeRequest {
+  id            Int               @id @default(autoincrement())
+  achievements  String            // 成果・実績
+  evidence      String?           // 証拠・エビデンス
+  selfEvaluation String?          // 自己評価
+  status        BadgeRequestStatus @default(PENDING)
+  reviewComment String?           // 審査コメント
+  approvedBy    Int?              // 承認者ID
+  approvedAt    DateTime?         // 承認日時
+  rejectedBy    Int?              // 却下者ID
+  rejectedAt    DateTime?         // 却下日時
+  rejectionReason String?         // 却下理由
+  
+  studentId Int
+  badgeId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  badge   Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  // 複合ユニーク制約（同じ学生が同じバッジに複数回申請できない）
+  @@unique([studentId, badgeId])
+  @@map("badge_requests")
+}
+
+// バッジ申請状態
+enum BadgeRequestStatus {
+  PENDING   // 申請中
+  APPROVED  // 承認済み
+  REJECTED  // 却下
+}
