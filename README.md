@@ -1,199 +1,270 @@
-# Ambassador PoC - 日本学生アンバサダー協議会プラットフォーム
+# 日本学生アンバサダー協議会 - プラットフォーム
 
-企業のアンバサダープログラムに参加する学生と企業をつなぐプラットフォームのPoC（Proof of Concept）実装です。
+学生と企業を繋ぐアンバサダープログラムプラットフォーム。バッジ認定システムを通じて学生のスキル向上と企業の人材発掘を支援します。
 
-## プロジェクト概要
+## 🎯 プロジェクト概要
 
-### スプリント1（完了）
-- ✅ 認証機能（ログイン・登録）
-- ✅ ランディングページ
-- ✅ 学生ダッシュボード
-- ✅ 企業ダッシュボード
-- ✅ 管理者ダッシュボード
+**目標売上**: 月間1億円
+**ターゲット**: 大学生・企業・教育機関
+**主要機能**: アンバサダープログラム管理、バッジ認定システム、マッチング機能
 
-### スプリント2（現在）
-- ✅ PostgreSQL + Prismaデータベース実装
-- ✅ 認証API（実データベース対応）
-- ✅ プログラム管理API
-- 🔄 応募管理API（実装予定）
-- 🔄 バッジ管理API（実装予定）
-- 🔄 フロントエンドの実API接続（実装予定）
+## 🚀 開発進捗
 
-## 技術スタック
+### ✅ Sprint 1 (完了)
+- 認証システム（JWT）
+- ランディングページ
+- ロール別ダッシュボード（学生・企業・管理者）
+- 基本的なUI/UX
 
-- **フロントエンド**: Next.js 15, React 19, TypeScript, Tailwind CSS
-- **バックエンド**: Next.js API Routes
-- **データベース**: PostgreSQL + Prisma ORM
-- **認証**: JWT + bcryptjs
-- **状態管理**: Zustand（必要に応じて）
+### ✅ Sprint 2 (完了)
+- PostgreSQL + Prisma ORM実装
+- データベース設計・マイグレーション
+- プログラム管理API
+- 認証システムの実データベース対応
 
-## セットアップ手順
+### ✅ Sprint 3 (完了)
+- **応募管理システム**
+  - 学生による応募機能
+  - 企業による選考管理
+  - ステータス追跡（応募中・選考中・採用・不採用）
+- **バッジ管理システム**
+  - バッジ作成・管理（企業・管理者）
+  - バッジ申請・承認フロー
+  - 実績・証拠提出機能
+- **メール通知システム**
+  - 応募通知（企業宛）
+  - 選考結果通知（学生宛）
+  - バッジ申請・結果通知
+- **ファイルアップロード機能**
+  - プロフィール画像
+  - ポートフォリオファイル
+  - バッジ画像・企業ロゴ
 
-### 1. 依存関係のインストール
+### 🔄 Sprint 4 (予定)
+- フロントエンド実装（React/Next.js）
+- リアルタイム通知
+- 検索・フィルタリング機能
+- 分析ダッシュボード
 
+## 🛠 技術スタック
+
+### Backend
+- **Framework**: Next.js 15 (App Router)
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Authentication**: JWT
+- **Email**: Nodemailer
+- **File Upload**: Multer
+- **Language**: TypeScript
+
+### Frontend
+- **Framework**: Next.js 15 + React 18
+- **Styling**: Tailwind CSS
+- **State Management**: React Context/Hooks
+- **UI Components**: Custom components
+
+### Infrastructure
+- **Deployment**: Vercel (予定)
+- **Database**: PostgreSQL (Supabase/Railway予定)
+- **File Storage**: Local storage (AWS S3予定)
+- **Email Service**: SMTP (SendGrid予定)
+
+## 📊 データベース設計
+
+### 主要テーブル
+- **User**: ユーザー基本情報
+- **StudentProfile**: 学生プロフィール
+- **CompanyProfile**: 企業プロフィール
+- **AdminProfile**: 管理者プロフィール
+- **Program**: アンバサダープログラム
+- **Application**: 応募情報
+- **Badge**: バッジ情報
+- **BadgeRequest**: バッジ申請
+
+### リレーション
+- User → Profile (1:1)
+- Company → Program (1:N)
+- Student → Application (1:N)
+- Program → Application (1:N)
+- Program → Badge (1:N)
+- Student → BadgeRequest (1:N)
+- Badge → BadgeRequest (1:N)
+
+## 🔧 セットアップ
+
+### 前提条件
+- Node.js 18+
+- PostgreSQL
+- npm/yarn
+
+### インストール
 ```bash
+# リポジトリクローン
+git clone <repository-url>
+cd ambassador-poc
+
+# 依存関係インストール
 npm install
-```
 
-### 2. PostgreSQLの設定
+# 環境変数設定
+cp .env.example .env
+# .envファイルを編集
 
-PostgreSQLをインストールして起動してください：
-
-```bash
-# macOS (Homebrew)
-brew install postgresql
-brew services start postgresql
-
-# データベース作成
-createdb ambassador_poc
-```
-
-### 3. 環境変数の設定
-
-`.env`ファイルをプロジェクトルートに作成してください：
-
-```env
-# データベース接続URL
-DATABASE_URL="postgresql://username:password@localhost:5432/ambassador_poc?schema=public"
-
-# JWT認証用シークレットキー
-JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
-
-# Next.js設定
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-nextauth-secret-key"
-
-# 環境設定
-NODE_ENV="development"
-```
-
-**注意**: 
-- `username`と`password`は実際のPostgreSQLユーザー情報に置き換えてください
-- 本番環境では強力なランダム文字列をJWT_SECRETに使用してください
-
-### 4. データベース初期化
-
-```bash
-# Prismaクライアント生成
+# データベースセットアップ
 npx prisma generate
-
-# データベーススキーマ適用
 npx prisma db push
 
-# データベースの確認（オプション）
-npx prisma studio
-```
-
-### 5. 開発サーバー起動
-
-```bash
+# 開発サーバー起動
 npm run dev
 ```
 
-アプリケーションは http://localhost:3000 で利用できます。
+### 環境変数
+```env
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/ambassador_db"
 
-## データベーススキーマ
+# JWT
+JWT_SECRET="your-jwt-secret-key"
 
-主要なテーブル構成：
+# Email (SMTP)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
 
-- **User**: ユーザー情報（学生・企業・管理者）
-- **StudentProfile**: 学生プロフィール詳細
-- **CompanyProfile**: 企業プロフィール詳細
-- **AdminProfile**: 管理者プロフィール詳細
-- **Program**: アンバサダープログラム
-- **Application**: プログラム応募
-- **Badge**: バッジ情報
-- **BadgeRequest**: バッジ発行申請
+# Application
+NEXTAUTH_URL="http://localhost:3000"
+ADMIN_EMAIL="admin@example.com"
+```
 
-## API エンドポイント
+## 📡 API エンドポイント
 
 ### 認証
 - `POST /api/auth/register` - ユーザー登録
 - `POST /api/auth/login` - ログイン
 
 ### プログラム管理
-- `GET /api/programs` - プログラム一覧取得
-- `POST /api/programs` - プログラム作成（企業のみ）
-- `GET /api/programs/[id]` - プログラム詳細取得
+- `GET /api/programs` - プログラム一覧
+- `POST /api/programs` - プログラム作成
+- `GET /api/programs/[id]` - プログラム詳細
 - `PUT /api/programs/[id]` - プログラム更新
 - `DELETE /api/programs/[id]` - プログラム削除
 
-### 応募管理（実装予定）
-- `POST /api/applications` - プログラム応募
-- `GET /api/applications/student/me` - 学生の応募一覧
-- `GET /api/applications/company/[programId]` - 企業のプログラム応募者一覧
+### 応募管理
+- `GET /api/applications` - 応募一覧
+- `POST /api/applications` - 応募作成
+- `GET /api/applications/[id]` - 応募詳細
+- `PUT /api/applications/[id]` - 応募ステータス更新
+- `DELETE /api/applications/[id]` - 応募削除（管理者のみ）
 
-### バッジ管理（実装予定）
-- `POST /api/badges/request` - バッジ発行申請
-- `GET /api/badges/requests` - バッジ申請一覧（管理者）
-- `PUT /api/badges/requests/[id]` - バッジ申請承認/却下
+### バッジ管理
+- `GET /api/badges` - バッジ一覧
+- `POST /api/badges` - バッジ作成
+- `GET /api/badges/requests` - バッジ申請一覧
+- `POST /api/badges/requests` - バッジ申請作成
+- `GET /api/badges/requests/[id]` - バッジ申請詳細
+- `PUT /api/badges/requests/[id]` - バッジ申請承認・却下
+- `DELETE /api/badges/requests/[id]` - バッジ申請削除
 
-## 開発ワークフロー
+### ファイルアップロード
+- `POST /api/upload` - ファイルアップロード
 
-1. **新機能開発**
-   ```bash
-   git checkout -b feature/new-feature
-   # 開発作業
-   git commit -m "Add new feature"
-   git push origin feature/new-feature
-   ```
+## 🔐 認証・認可
 
-2. **データベーススキーマ変更**
-   ```bash
-   # schema.prismaを編集
-   npx prisma db push
-   npx prisma generate
-   ```
+### ロール
+- **STUDENT**: 学生ユーザー
+- **COMPANY**: 企業ユーザー
+- **ADMIN**: 管理者
 
-3. **型定義の更新**
-   Prismaスキーマを変更した場合、自動で型定義が更新されます。
+### 権限
+- 学生: 応募作成、バッジ申請、プロフィール管理
+- 企業: プログラム管理、応募管理、バッジ作成・承認
+- 管理者: 全機能アクセス、ユーザー管理
 
-## テストユーザー
+## 📧 メール通知
 
-開発環境でテスト用ユーザーを作成するには、登録画面から以下の情報で登録してください：
+### 自動送信メール
+- 新規応募通知（企業宛）
+- 選考結果通知（学生宛）
+- バッジ申請通知（企業・管理者宛）
+- バッジ申請結果通知（学生宛）
 
-- **学生**: role="STUDENT"
-- **企業**: role="COMPANY"  
-- **管理者**: role="ADMIN"
+### メール設定
+SMTPサーバーの設定が必要です。Gmail、SendGrid、AWS SESなどに対応。
 
-## トラブルシューティング
+## 📁 ファイルアップロード
 
-### データベース接続エラー
-- PostgreSQLが起動しているか確認
-- `.env`ファイルのDATABASE_URLが正しいか確認
-- データベース権限の確認
+### サポートファイル
+- **画像**: JPEG, PNG, GIF, WebP (最大5MB)
+- **ドキュメント**: PDF, Word (最大20MB)
 
-### Prismaエラー
+### アップロード種別
+- プロフィール画像 (5MB制限)
+- ポートフォリオファイル (20MB制限)
+- バッジ画像 (2MB制限)
+- 企業ロゴ (3MB制限)
+
+## 🧪 テスト
+
 ```bash
-# クライアント再生成
-npx prisma generate
+# ユニットテスト
+npm run test
 
-# データベース状態確認
-npx prisma studio
+# E2Eテスト
+npm run test:e2e
+
+# テストカバレッジ
+npm run test:coverage
 ```
 
-### 型エラー
+## 📈 パフォーマンス
+
+### 最適化
+- Next.js App Router使用
+- 画像最適化
+- データベースインデックス
+- APIレスポンスキャッシュ
+
+### 監視
+- エラー追跡
+- パフォーマンス監視
+- ユーザー行動分析
+
+## 🚀 デプロイ
+
+### 本番環境
 ```bash
-# 型定義の更新
-npx prisma generate
-npm run lint
+# ビルド
+npm run build
+
+# 本番起動
+npm start
 ```
 
-## 今後の実装予定
+### 環境別設定
+- 開発: `npm run dev`
+- ステージング: `npm run build && npm start`
+- 本番: Vercel自動デプロイ
 
-### スプリント3（予定）
-- 応募管理フローの完全実装
-- バッジ発行・承認システム
-- メール通知機能
-- ファイルアップロード機能
-- 検索・フィルタリング強化
+## 🤝 コントリビューション
 
-### スプリント4（予定）
-- パフォーマンス最適化
-- セキュリティ強化
-- 本番環境デプロイ準備
-- 管理者機能拡張
+1. フォークする
+2. フィーチャーブランチ作成 (`git checkout -b feature/amazing-feature`)
+3. コミット (`git commit -m 'Add amazing feature'`)
+4. プッシュ (`git push origin feature/amazing-feature`)
+5. プルリクエスト作成
 
-## ライセンス
+## 📝 ライセンス
 
-このプロジェクトは開発中のPoCであり、商用利用前に適切なライセンスを設定する予定です。
+このプロジェクトはMITライセンスの下で公開されています。
+
+## 📞 サポート
+
+- 技術的な質問: [GitHub Issues](https://github.com/your-repo/issues)
+- ビジネス関連: contact@ambassador-platform.com
+
+---
+
+**開発チーム**: 日本学生アンバサダー協議会 開発部
+**最終更新**: 2024年12月
