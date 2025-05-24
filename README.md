@@ -1,247 +1,258 @@
-# 日本学生アンバサダー協議会プラットフォーム
+# 日本学生アンバサダー協議会 - POCシステム
 
-企業のアンバサダープログラムと学生をつなぐ革新的なプラットフォームです。学生は実践的な経験を積み、信頼性の高いデジタルバッジを取得できます。
+企業・学生・管理者のための包括的なアンバサダープログラム管理システムです。
 
-## 🚀 機能概要
+## 🌟 主な機能
+
+### 認証システム
+- **マジックリンク認証**: パスワード不要の安全な認証システム
+- **役割ベースアクセス制御**: 学生・企業・管理者の3つの役割
+- **JWT トークン認証**: セキュアなAPIアクセス
 
 ### 学生向け機能
-- **プログラム検索・応募**: 企業のアンバサダープログラムを検索し応募
-- **ダッシュボード**: 応募状況とおすすめプログラムの確認
-- **デジタルバッジ**: 完了したプログラムのバッジ申請・取得
-- **プロフィール管理**: 学歴・スキル・ポートフォリオの管理
+- プログラム検索・応募
+- 応募状況管理
+- プロフィール管理
+- 通知システム
 
 ### 企業向け機能
-- **プログラム管理**: アンバサダープログラムの作成・編集・公開
-- **応募者管理**: 学生の応募を確認し選考プロセスを管理
-- **バッジ発行**: 完了した学生へのデジタルバッジ発行
-- **企業プロフィール**: 会社情報・ロゴの管理
+- プログラム作成・管理
+- 応募者管理
+- ステータス追跡
+- 分析ダッシュボード
 
-### 管理者機能
-- **全体管理**: プラットフォーム全体の監視・管理
-- **バッジ承認**: 企業が発行したバッジの最終承認
-- **ユーザー管理**: 学生・企業アカウントの管理
+### 管理者向け機能
+- 全体管理
+- ユーザー管理
+- システム監視
 
-## 🛠 技術スタック
+### 通知システム
+- リアルタイム通知
+- メール通知
+- プッシュ通知
 
-### フロントエンド
-- **Next.js 15** - React フレームワーク
-- **TypeScript** - 型安全性
-- **Tailwind CSS** - スタイリング
-- **React Hook Form** - フォーム管理
+### プログラム管理
+- プログラム作成・編集・削除
+- 応募管理
+- ステータス管理
+- レポート機能
 
-### バックエンド
-- **Next.js API Routes** - サーバーサイドAPI
-- **Prisma** - データベースORM
-- **SQLite/PostgreSQL** - データベース
-- **JWT** - 認証・認可
+## 🚀 セットアップ手順
 
-### インフラ・デプロイ
-- **Docker** - コンテナ化
-- **GitHub Actions** - CI/CD
-- **Nginx** - リバースプロキシ
-- **Redis** - キャッシュ・セッション管理
-
-## 📦 セットアップ
-
-### 前提条件
-- Node.js 18以上
+### 1. 必要な環境
+- Node.js 18.x以上
 - npm または yarn
-- Git
+- SQLite（開発環境）
 
-### ローカル開発環境
-
-1. **リポジトリのクローン**
+### 2. インストール
 ```bash
-git clone https://github.com/your-username/ambassador-poc.git
+git clone <repository-url>
 cd ambassador-poc
-```
-
-2. **依存関係のインストール**
-```bash
 npm install
 ```
 
-3. **環境変数の設定**
+### 3. 環境変数設定
 ```bash
-cp .env.example .env
-# .envファイルを編集して必要な値を設定
+cp env.example .env
 ```
 
-4. **データベースの初期化**
-```bash
-npm run db:generate
-npm run db:push
+`.env`ファイルを編集して必要な値を設定：
+
+```env
+# Database
+DATABASE_URL="file:./prisma/dev.db"
+
+# JWT Secret (本番環境では安全なランダム文字列に変更)
+JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+
+# Next.js
+NEXTAUTH_URL="http://localhost:3000"
+
+# メール設定（開発環境）
+SMTP_HOST="smtp.ethereal.email"
+SMTP_PORT="587"
+SMTP_USER="your-ethereal-user"
+SMTP_PASS="your-ethereal-pass"
+FROM_EMAIL="noreply@ambassador-council.jp"
 ```
 
-5. **開発サーバーの起動**
+### 4. データベースセットアップ
+```bash
+npx prisma generate
+npx prisma db push
+```
+
+### 5. メール設定（開発環境）
+```bash
+node scripts/setup-email.js
+```
+
+このスクリプトが生成するSMTP設定を`.env`ファイルに追加してください。
+
+### 6. 開発サーバー起動
 ```bash
 npm run dev
 ```
 
-アプリケーションは http://localhost:3000 で利用できます。
+ブラウザで `http://localhost:3000` にアクセス
 
-### テストアカウント
+## 🔐 認証システムの使用方法
 
-開発環境では以下のテストアカウントが利用できます：
+### マジックリンク認証の流れ
 
-- **学生**: success-test@example.com / password123
-- **企業**: company@example.com / password123  
-- **管理者**: admin@example.com / password123
+1. **ログインページアクセス**: `/auth/login`
+2. **アカウントタイプ選択**: 学生・企業・管理者から選択
+3. **メールアドレス入力**: 登録済みまたは新規メールアドレス
+4. **認証メール送信**: 15分間有効な認証リンクがメールで送信
+5. **認証リンククリック**: メールの認証ボタンをクリック
+6. **自動ログイン**: 対応するダッシュボードに自動遷移
 
-## 🐳 Docker での実行
+### 初回ログイン
+- 新しいメールアドレスでログインすると自動的にアカウントが作成されます
+- 選択した役割（学生・企業・管理者）に応じたプロフィールが作成されます
+
+### セキュリティ機能
+- **有効期限**: 認証リンクは15分間のみ有効
+- **ワンタイム使用**: 一度使用したリンクは無効化
+- **レート制限**: 5分間に1回のみメール送信可能
+- **SSL暗号化**: 全ての通信が暗号化
+
+## 📧 メール設定
 
 ### 開発環境
-```bash
-npm run docker:compose
+- **Ethereal Email**: テスト用メールサービス
+- 送信されたメールはブラウザで確認可能
+- 実際のメール送信は行われません
+
+### 本番環境の設定例
+
+#### Gmail使用時
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-gmail@gmail.com"
+SMTP_PASS="your-app-password"
 ```
 
-### 本番環境
-```bash
-docker-compose -f docker-compose.yml up -d
+#### SendGrid使用時
+```env
+SMTP_HOST="smtp.sendgrid.net"
+SMTP_PORT="587"
+SMTP_USER="apikey"
+SMTP_PASS="your-sendgrid-api-key"
 ```
 
-## 📚 API ドキュメント
+## 🎯 ユーザー役割とアクセス権限
 
-### 認証
-- `POST /api/auth/login` - ログイン
-- `POST /api/auth/register` - ユーザー登録
+### 学生アカウント
+- プログラム検索・閲覧
+- プログラム応募
+- 応募状況確認
+- プロフィール管理
+- 通知受信
 
-### プログラム管理
-- `GET /api/programs` - プログラム一覧取得
+### 企業アカウント
+- プログラム作成・編集・削除
+- 応募者管理
+- 応募状況確認
+- 統計ダッシュボード
+- 自社プログラムのみ管理可能
+
+### 管理者アカウント
+- 全体システム管理
+- 全ユーザー・プログラム閲覧
+- システム統計
+- コンテンツ管理
+
+## 🛠 API仕様
+
+### 認証API
+- `POST /api/auth/send-magic-link` - マジックリンク送信
+- `GET /api/auth/verify?token=xxx` - トークン認証
+
+### プログラムAPI
+- `GET /api/programs` - プログラム一覧
 - `POST /api/programs` - プログラム作成（企業のみ）
-- `PUT /api/programs/:id` - プログラム更新（企業のみ）
+- `GET /api/programs/[id]` - プログラム詳細
+- `PUT /api/programs/[id]` - プログラム更新（作成者のみ）
+- `DELETE /api/programs/[id]` - プログラム削除（作成者のみ）
 
-### 応募管理
-- `GET /api/applications` - 応募一覧取得
-- `POST /api/applications` - 新規応募（学生のみ）
-- `PUT /api/applications/:id` - 応募状況更新（企業のみ）
+### 応募API
+- `POST /api/applications` - 応募作成
+- `GET /api/applications` - 応募一覧
+- `PUT /api/applications/[id]` - 応募更新
 
-### バッジ管理
-- `GET /api/badges` - バッジ一覧取得
-- `POST /api/badges` - バッジ作成（企業・管理者のみ）
-- `POST /api/badge-requests` - バッジ申請（学生のみ）
+## 🚀 デプロイメント
 
-### ファイルアップロード
-- `POST /api/upload` - ファイルアップロード（ロール別権限）
+### Vercel（推奨）
+1. GitHubリポジトリをVercelに接続
+2. 環境変数を設定
+3. 自動デプロイ
 
-### システム
-- `GET /api/health` - ヘルスチェック
+### 本番環境の設定
+- 本格的なデータベース（PostgreSQL推奨）
+- メールサービス（SendGrid、AWS SES等）
+- SSL証明書の設定
+- セキュリティヘッダーの設定
 
-## 🔧 開発コマンド
+## 🧪 テスト
 
+### 開発環境でのテスト
 ```bash
-# 開発サーバー起動
+# メール設定テスト
+node scripts/setup-email.js
+
+# アプリケーション起動
 npm run dev
-
-# ビルド
-npm run build
-
-# 本番サーバー起動
-npm start
-
-# リンター実行
-npm run lint
-
-# 型チェック
-npm run type-check
-
-# データベース操作
-npm run db:generate    # Prismaクライアント生成
-npm run db:push        # スキーマをデータベースに反映
-npm run db:migrate     # マイグレーション実行
-npm run db:studio      # Prisma Studio起動
-
-# Docker操作
-npm run docker:build   # Dockerイメージビルド
-npm run docker:run     # Dockerコンテナ実行
-npm run docker:compose # Docker Compose起動
 ```
 
-## 🚀 デプロイ
-
-### GitHub Actions CI/CD
-
-1. **GitHub Secrets の設定**
-```
-JWT_SECRET=your-production-jwt-secret
-DATABASE_URL=your-production-database-url
-SMTP_HOST=your-smtp-host
-SMTP_USER=your-smtp-user
-SMTP_PASS=your-smtp-password
-PRODUCTION_HOST=your-server-ip
-PRODUCTION_USER=your-server-user
-PRODUCTION_SSH_KEY=your-ssh-private-key
-```
-
-2. **mainブランチにプッシュ**
-```bash
-git push origin main
-```
-
-GitHub Actionsが自動的にテスト・ビルド・デプロイを実行します。
-
-### 手動デプロイ
-
-```bash
-# Dockerイメージをビルド
-npm run docker:build
-
-# 本番環境で実行
-docker-compose -f docker-compose.yml up -d
-```
+### テスト用アカウント
+開発環境では任意のメールアドレスでアカウントを作成できます：
+- `student@example.com` - 学生アカウント
+- `company@example.com` - 企業アカウント  
+- `admin@example.com` - 管理者アカウント
 
 ## 📁 プロジェクト構造
 
 ```
 ambassador-poc/
 ├── app/                    # Next.js App Router
-│   ├── api/               # API Routes
+│   ├── api/               # APIルート
+│   │   ├── auth/          # 認証API
+│   │   ├── programs/      # プログラムAPI
+│   │   └── applications/  # 応募API
 │   ├── auth/              # 認証ページ
-│   ├── student/           # 学生向けページ
-│   ├── company/           # 企業向けページ
-│   ├── admin/             # 管理者向けページ
-│   └── programs/          # プログラム一覧ページ
+│   ├── student/           # 学生ダッシュボード
+│   ├── company/           # 企業ダッシュボード
+│   └── admin/             # 管理者ダッシュボード
 ├── src/
-│   ├── lib/               # ユーティリティ・ライブラリ
-│   ├── generated/         # Prisma生成ファイル
-│   └── types/             # TypeScript型定義
-├── public/
-│   └── uploads/           # アップロードファイル
+│   ├── components/        # 共通コンポーネント
+│   ├── lib/               # ユーティリティ
+│   └── generated/         # Prisma生成ファイル
 ├── prisma/                # データベーススキーマ
-├── .github/workflows/     # GitHub Actions
-├── docker-compose.yml     # Docker Compose設定
-├── Dockerfile            # Docker設定
-└── README.md             # このファイル
+└── scripts/               # ユーティリティスクリプト
 ```
-
-## 🔒 セキュリティ
-
-- JWT認証による安全なユーザー認証
-- ロールベースアクセス制御（RBAC）
-- ファイルアップロード時の型・サイズ検証
-- SQLインジェクション対策（Prisma ORM）
-- XSS対策（Next.jsの自動エスケープ）
-- CSRF対策（SameSite Cookie）
-
-## 📄 ライセンス
-
-このプロジェクトは MIT ライセンスの下で公開されています。
 
 ## 🤝 コントリビューション
 
-1. このリポジトリをフォーク
-2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add amazing feature'`)
-4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
+1. フォークする
+2. フィーチャーブランチを作成する
+3. コミットする
+4. プッシュする
+5. プルリクエストを作成する
 
-## 📞 サポート
+## 📝 ライセンス
 
-質問や問題がある場合は、以下の方法でお問い合わせください：
+このプロジェクトはMITライセンスの下で公開されています。
 
-- GitHub Issues: [Issues ページ](https://github.com/your-username/ambassador-poc/issues)
-- Email: support@ambassador-council.jp
+## 🆘 サポート
+
+問題や質問がある場合は、以下の方法でお問い合わせください：
+
+- **Issue**: GitHubのIssueを作成
+- **Email**: support@ambassador-council.jp
+- **Discord**: [開発者コミュニティ](https://discord.gg/ambassador-council)
 
 ---
 
-**日本学生アンバサダー協議会** - 学生と企業をつなぐ革新的なプラットフォーム
+**注意**: これはPoC（概念実証）システムです。本番環境での使用前には十分なセキュリティ監査とテストを実施してください。

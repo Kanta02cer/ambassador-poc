@@ -25,13 +25,22 @@ export default function SignupPage() {
   });
 
   const [serverError, setServerError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<any>(null);
   const [success, setSuccess] = useState(false);
 
   const onSubmit = async (data: SignupFormInputs) => {
     setServerError(null);
+    setErrorDetails(null);
     setSuccess(false);
     
     try {
+      console.log('Sending registration data:', {
+        role: data.role,
+        name: data.name,
+        email: data.email,
+        password: '[HIDDEN]'
+      });
+      
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -43,14 +52,29 @@ export default function SignupPage() {
         }),
       });
       
+      const responseData = await res.json();
+      
+      console.log('API Response:', {
+        status: res.status,
+        statusText: res.statusText,
+        data: responseData
+      });
+      
       if (!res.ok) {
-        const err = await res.json();
-        setServerError(err.message || "登録に失敗しました");
+        setServerError(responseData.error || `HTTP ${res.status}: ${res.statusText}`);
+        setErrorDetails({
+          status: res.status,
+          statusText: res.statusText,
+          response: responseData
+        });
       } else {
         setSuccess(true);
+        console.log('Registration successful:', responseData);
       }
-    } catch {
-      setServerError("サーバーエラーが発生しました");
+    } catch (error) {
+      console.error('Network error:', error);
+      setServerError("ネットワークエラーが発生しました: " + (error instanceof Error ? error.message : String(error)));
+      setErrorDetails({ networkError: error });
     }
   };
 
@@ -182,18 +206,34 @@ export default function SignupPage() {
           
           {/* サーバーエラー */}
           {serverError && (
-            <div className="text-red-500 text-center">{serverError}</div>
+            <div className="bg-red-50 border border-red-200 rounded p-3">
+              <div className="text-red-600 font-medium">エラーが発生しました</div>
+              <div className="text-red-500 text-sm mt-1">{serverError}</div>
+              {errorDetails && (
+                <details className="mt-2">
+                  <summary className="text-xs text-gray-600 cursor-pointer">詳細情報</summary>
+                  <pre className="text-xs bg-gray-100 p-2 mt-1 rounded overflow-auto max-h-32">
+                    {JSON.stringify(errorDetails, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </div>
           )}
           
           {/* 成功メッセージ */}
           {success && (
-            <div className="text-green-600 text-center">登録が完了しました！</div>
+            <div className="bg-green-50 border border-green-200 rounded p-3">
+              <div className="text-green-600 font-medium">登録が完了しました！</div>
+              <div className="text-green-500 text-sm mt-1">
+                ログインページに移動してサインインしてください
+              </div>
+            </div>
           )}
           
           {/* 登録ボタン */}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSubmitting}
           >
             {isSubmitting ? "登録中..." : "登録"}

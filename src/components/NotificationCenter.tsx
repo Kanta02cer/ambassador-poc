@@ -19,7 +19,9 @@ export default function NotificationCenter({ className = '' }: NotificationCente
     markAsRead,
     markAllAsRead,
     removeNotification,
-    requestNotificationPermission
+    requestNotificationPermission,
+    // 開発用機能
+    ...devFeatures
   } = useWebSocketNotifications();
 
   // デスクトップ通知許可状況を確認
@@ -101,9 +103,25 @@ export default function NotificationCenter({ className = '' }: NotificationCente
       markAsRead(notification.id);
     }
     
-    // 通知のデータに基づいてナビゲーション
-    if (notification.data?.url) {
-      window.location.href = notification.data.url;
+    // ユーザーの役割に応じて適切な詳細ページに遷移
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userRole = payload.role;
+        
+        if (userRole === 'COMPANY') {
+          window.location.href = `/company/notifications/${notification.id}`;
+        } else {
+          window.location.href = `/notifications/${notification.id}`;
+        }
+      } catch (error) {
+        // トークンの解析に失敗した場合はデフォルトの学生用ページに遷移
+        window.location.href = `/notifications/${notification.id}`;
+      }
+    } else {
+      // トークンがない場合はログインページに遷移
+      window.location.href = '/auth/login';
     }
   };
 
@@ -180,11 +198,14 @@ export default function NotificationCenter({ className = '' }: NotificationCente
             <div className="flex items-center mt-2 text-sm">
               <span 
                 className={`w-2 h-2 rounded-full mr-2 ${
-                  isConnected ? 'bg-green-500' : 'bg-red-500'
+                  isConnected ? 'bg-green-500' : 'bg-yellow-500'
                 }`}
               />
-              <span className={isConnected ? 'text-green-600' : 'text-red-600'}>
-                {isConnected ? 'リアルタイム接続中' : '接続が切断されています'}
+              <span className={isConnected ? 'text-green-600' : 'text-yellow-600'}>
+                {process.env.NODE_ENV === 'development' 
+                  ? (isConnected ? 'リアルタイム接続中' : '開発モード（WebSocket無効）')
+                  : (isConnected ? 'リアルタイム接続中' : '接続が切断されています')
+                }
               </span>
             </div>
           </div>
@@ -203,6 +224,25 @@ export default function NotificationCenter({ className = '' }: NotificationCente
                   className="ml-3 text-sm bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
                 >
                   有効にする
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 開発環境用テストボタン */}
+          {process.env.NODE_ENV === 'development' && 'generateTestNotification' in devFeatures && (
+            <div className="p-4 bg-blue-50 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-blue-800">
+                    開発モード：テスト通知を生成
+                  </p>
+                </div>
+                <button
+                  onClick={() => (devFeatures as any).generateTestNotification()}
+                  className="ml-3 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                >
+                  テスト通知
                 </button>
               </div>
             </div>

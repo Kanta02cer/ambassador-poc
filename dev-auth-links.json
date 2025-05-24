@@ -1,0 +1,7 @@
+{
+  "timestamp": "2025-05-24T14:35:30.885Z",
+  "email": "wantan0222nontama1207@gmail.com",
+  "role": "学生",
+  "magicLink": "http://localhost:3000/auth/verify?token=6960792a6cd10b5aae51036ae99dc3763c862d8803c260fa9abdf9e0ed67e7de",
+  "expiresIn": "15分間"
+}

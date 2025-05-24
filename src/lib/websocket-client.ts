@@ -132,6 +132,17 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
 
   // WebSocket接続
   const connect = useCallback(() => {
+    // 開発環境では WebSocket 接続を無効化
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚧 WebSocket disabled in development mode');
+      setState(prev => ({ 
+        ...prev, 
+        isConnected: false, 
+        lastConnectionTime: new Date().toISOString() 
+      }));
+      return;
+    }
+
     const token = localStorage.getItem('accessToken');
     if (!token) {
       console.warn('No access token found for WebSocket connection');
@@ -283,6 +294,62 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
     return Notification.permission;
   }, []);
 
+  // 開発環境用：テスト通知を生成
+  const generateTestNotification = useCallback((type?: string) => {
+    if (process.env.NODE_ENV !== 'development') return;
+
+    // ログインユーザーIDを取得（ない場合は1をデフォルト）
+    let userId = 1;
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userId = payload.id || 1;
+      }
+    } catch (error) {
+      // トークンの解析に失敗した場合はデフォルト値を使用
+    }
+
+    const testNotifications = [
+      {
+        id: `test-${Date.now()}`,
+        type: 'APPLICATION_STATUS_CHANGED' as const,
+        userId,
+        title: '応募状況が更新されました',
+        message: 'テック企業インターンの選考結果が発表されました',
+        timestamp: new Date().toISOString(),
+        priority: 'high' as const,
+        isRead: false,
+        data: { programId: 1, applicationId: 1 }
+      },
+      {
+        id: `test-${Date.now() + 1}`,
+        type: 'PROGRAM_PUBLISHED' as const,
+        userId,
+        title: '新しいプログラムが公開されました',
+        message: '【株式会社Example】マーケティングアンバサダー募集開始',
+        timestamp: new Date().toISOString(),
+        priority: 'medium' as const,
+        isRead: false,
+        data: { programId: 2 }
+      },
+      {
+        id: `test-${Date.now() + 2}`,
+        type: 'BADGE_REQUEST_APPROVED' as const,
+        userId,
+        title: 'バッジが承認されました！',
+        message: '「プロジェクトリーダー」バッジが正式に認定されました',
+        timestamp: new Date().toISOString(),
+        priority: 'urgent' as const,
+        isRead: false,
+        data: { badgeId: 1 }
+      }
+    ];
+
+    const randomNotification = testNotifications[Math.floor(Math.random() * testNotifications.length)];
+    handleNotification(randomNotification);
+  }, [handleNotification]);
+
   // 初期化
   useEffect(() => {
     initializeAudio();
@@ -300,6 +367,19 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
 
     if (typeof window !== 'undefined') {
       window.addEventListener('dev-notification', handleDevNotification as EventListener);
+      
+      // 開発環境でのテスト通知の生成（10秒後）
+      if (process.env.NODE_ENV === 'development') {
+        const testTimeout = setTimeout(() => {
+          generateTestNotification();
+        }, 10000);
+
+        return () => {
+          disconnect();
+          clearTimeout(testTimeout);
+          window.removeEventListener('dev-notification', handleDevNotification as EventListener);
+        };
+      }
     }
 
     return () => {
@@ -308,7 +388,7 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
         window.removeEventListener('dev-notification', handleDevNotification as EventListener);
       }
     };
-  }, [autoConnect, connect, disconnect, initializeAudio, handleNotification]);
+  }, [autoConnect, connect, disconnect, initializeAudio, handleNotification, generateTestNotification]);
 
   return {
     // 状態
@@ -326,7 +406,10 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
     requestNotificationPermission,
     
     // ヘルパー
-    playNotificationSound
+    playNotificationSound,
+    
+    // 開発用
+    ...(process.env.NODE_ENV === 'development' && { generateTestNotification })
   };
 }
 

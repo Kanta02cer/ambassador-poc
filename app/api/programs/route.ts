@@ -12,12 +12,52 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const companyId = searchParams.get('companyId');
     const status = searchParams.get('status');
+    const companyOwned = searchParams.get('companyOwned') === 'true';
     const skip = (page - 1) * limit;
 
     // 検索条件の構築
-    const where: Prisma.ProgramWhereInput = {
-      isPublic: true,
-    };
+    const where: Prisma.ProgramWhereInput = {};
+
+    // 企業が所有するプログラムのみを取得する場合
+    if (companyOwned) {
+      const authHeader = request.headers.get('authorization');
+      const token = extractTokenFromHeader(authHeader);
+      
+      if (!token) {
+        return NextResponse.json(
+          { error: '認証が必要です' },
+          { status: 401 }
+        );
+      }
+
+      const payload = verifyToken(token);
+      if (!payload || payload.role !== 'COMPANY') {
+        return NextResponse.json(
+          { error: '企業アカウントのアクセスが必要です' },
+          { status: 403 }
+        );
+      }
+
+      // 企業ユーザーのcompanyIdを取得
+      const user = await prisma.user.findUnique({
+        where: { id: payload.id },
+        include: {
+          companyProfile: true
+        }
+      });
+
+      if (!user?.companyProfile) {
+        return NextResponse.json(
+          { error: '企業プロフィールが見つかりません' },
+          { status: 404 }
+        );
+      }
+
+      where.companyId = user.companyProfile.id;
+    } else {
+      // 一般の検索では公開プログラムのみ
+      where.isPublic = true;
+    }
 
     if (search) {
       where.OR = [

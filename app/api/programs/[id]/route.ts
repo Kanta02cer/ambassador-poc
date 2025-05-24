@@ -27,6 +27,7 @@ export async function GET(
             logoUrl: true,
             description: true,
             website: true,
+            userId: true,
           },
         },
         applications: {

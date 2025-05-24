@@ -1,5 +1,35 @@
 // ユーザー関連
+import { UserRole as PrismaUserRole } from '../generated/prisma';
+
 export type UserRole = 'student' | 'company' | 'admin';
+export type PrismaUserRoleType = PrismaUserRole;
+
+// UserRoleマッピング関数
+export function mapUserRoleToPrisma(role: UserRole): PrismaUserRoleType {
+  switch (role) {
+    case 'student':
+      return 'STUDENT';
+    case 'company':
+      return 'COMPANY';
+    case 'admin':
+      return 'ADMIN';
+    default:
+      throw new Error(`Invalid role: ${role}`);
+  }
+}
+
+export function mapPrismaRoleToUser(role: PrismaUserRoleType): UserRole {
+  switch (role) {
+    case 'STUDENT':
+      return 'student';
+    case 'COMPANY':
+      return 'company';
+    case 'ADMIN':
+      return 'admin';
+    default:
+      throw new Error(`Invalid Prisma role: ${role}`);
+  }
+}
 
 export interface User {
   id: number;

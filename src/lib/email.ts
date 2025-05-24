@@ -297,4 +297,181 @@ export const sendBadgeRequestStatusEmail = async (
     subject: `【アンバサダー協議会】バッジ申請結果: ${badgeTitle}`,
     html: generateEmailHTML(template),
   });
-}; 
+};
+
+interface SendMagicLinkOptions {
+  email: string;
+  role: 'STUDENT' | 'COMPANY' | 'ADMIN';
+  token: string;
+}
+
+export async function sendMagicLink({ email, role, token }: SendMagicLinkOptions) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const magicLink = `${baseUrl}/auth/verify?token=${token}`;
+  
+  const roleText = {
+    STUDENT: '学生',
+    COMPANY: '企業',
+    ADMIN: '管理者'
+  }[role];
+
+  // 開発環境では簡易版を使用
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('\n=== 開発環境: マジックリンク認証 ===');
+    console.log(`宛先: ${email}`);
+    console.log(`アカウントタイプ: ${roleText}`);
+    console.log(`認証URL: ${magicLink}`);
+    console.log(`有効期限: 15分間`);
+    console.log('=====================================\n');
+    
+    // 開発用ファイルに認証URLを保存
+    const fs = require('fs');
+    const authData = {
+      timestamp: new Date().toISOString(),
+      email,
+      role: roleText,
+      magicLink,
+      expiresIn: '15分間'
+    };
+    
+    try {
+      fs.writeFileSync('dev-auth-links.json', JSON.stringify(authData, null, 2));
+      console.log('✅ 認証リンクをdev-auth-links.jsonに保存しました');
+    } catch (error) {
+      console.log('⚠️ ファイル保存エラー:', error instanceof Error ? error.message : String(error));
+    }
+    
+    return { 
+      success: true, 
+      messageId: 'dev-mode-' + Date.now(),
+      magicLink 
+    };
+  }
+
+  // 本番環境では実際のメール送信
+  const transporter = createTransporter();
+  
+  if (!transporter) {
+    console.log('SMTP not configured, skipping email send');
+    return { success: false, error: 'SMTP not configured' };
+  }
+
+  const mailOptions = {
+    from: process.env.FROM_EMAIL || 'noreply@ambassador-council.jp',
+    to: email,
+    subject: `日本学生アンバサダー協議会 - ログイン認証（${roleText}アカウント）`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
+          .button { display: inline-block; background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+          .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b; }
+          .warning { background: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>日本学生アンバサダー協議会</h1>
+            <p>ログイン認証</p>
+          </div>
+          <div class="content">
+            <h2>こんにちは！</h2>
+            <p><strong>${email}</strong> でログインリクエストを受け付けました。</p>
+            <p>アカウントタイプ: <strong>${roleText}アカウント</strong></p>
+            
+            <p>以下のボタンをクリックしてログインを完了してください：</p>
+            
+            <div style="text-align: center;">
+              <a href="${magicLink}" class="button">ログインする</a>
+            </div>
+            
+            <p style="margin-top: 20px;">
+              または以下のリンクをコピーしてブラウザに貼り付けてください：<br>
+              <code style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 12px; word-break: break-all;">${magicLink}</code>
+            </p>
+            
+            <div class="warning">
+              <strong>⚠️ セキュリティに関する注意事項：</strong>
+              <ul>
+                <li>このリンクは<strong>15分間</strong>のみ有効です</li>
+                <li>一度使用したリンクは無効になります</li>
+                <li>このメールに心当たりがない場合は無視してください</li>
+                <li>リンクを他の人と共有しないでください</li>
+              </ul>
+            </div>
+          </div>
+          <div class="footer">
+            <p>このメールは日本学生アンバサダー協議会から送信されています。</p>
+            <p>ご質問がございましたら、support@ambassador-council.jp までお問い合わせください。</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `
+日本学生アンバサダー協議会 - ログイン認証
+
+こんにちは！
+
+${email} でログインリクエストを受け付けました。
+アカウントタイプ: ${roleText}アカウント
+
+以下のリンクをクリックしてログインを完了してください：
+${magicLink}
+
+セキュリティに関する注意事項：
+- このリンクは15分間のみ有効です
+- 一度使用したリンクは無効になります
+- このメールに心当たりがない場合は無視してください
+- リンクを他の人と共有しないでください
+
+このメールは日本学生アンバサダー協議会から送信されています。
+ご質問がございましたら、support@ambassador-council.jp までお問い合わせください。
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('メール送信成功:', info.messageId);
+    
+    // 開発環境でのプレビューURL（Ethereal Email）
+    if (process.env.NODE_ENV !== 'production' && info.response && info.response.includes('ethereal')) {
+      console.log('プレビューURL:', nodemailer.getTestMessageUrl(info));
+    }
+    
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('メール送信エラー:', error);
+    return { success: false, error: error };
+  }
+}
+
+// テスト用のメールアカウント作成（開発環境）
+export async function createTestAccount() {
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
+  
+  try {
+    const testAccount = await nodemailer.createTestAccount();
+    console.log('テストアカウント作成:', {
+      user: testAccount.user,
+      pass: testAccount.pass,
+      smtp: testAccount.smtp,
+      imap: testAccount.imap,
+      pop3: testAccount.pop3,
+      web: testAccount.web
+    });
+    return testAccount;
+  } catch (error) {
+    console.error('テストアカウント作成エラー:', error);
+    return null;
+  }
+} 

@@ -1,46 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // ログイン状態をチェック
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      // JWTトークンからユーザー情報を取得してリダイレクト
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const userRole = payload.role || payload.user?.role;
-        
-        switch (userRole) {
-          case 'STUDENT':
-            router.push('/student/dashboard');
-            return;
-          case 'COMPANY':
-            router.push('/company/dashboard');
-            return;
-          case 'ADMIN':
-            router.push('/admin/dashboard');
-            return;
-          default:
-            // 不明なロールの場合はログアウト
-            localStorage.removeItem('accessToken');
-            break;
-        }
-      } catch {
-        // トークンが無効な場合はログアウト
-        localStorage.removeItem('accessToken');
-      }
+    // ログイン済みの場合はダッシュボードにリダイレクト
+    if (session) {
+      router.push('/dashboard');
     }
-    setIsLoading(false);
-  }, [router]);
+  }, [session, router]);
 
-  if (isLoading) {
+  // ローディング中の表示
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -51,6 +28,11 @@ export default function Home() {
     );
   }
 
+  // ログイン済みの場合は何も表示しない（リダイレクト中）
+  if (session) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
       {/* ヘッダー */}
@@ -59,7 +41,7 @@ export default function Home() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-blue-600">
-                日本学生アンバサダー協議会
+                学生アンバサダー協議会
               </h1>
             </div>
             <nav className="flex space-x-4">
@@ -68,12 +50,6 @@ export default function Home() {
                 className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md transition"
               >
                 ログイン
-              </Link>
-              <Link 
-                href="/auth/signup" 
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-              >
-                新規登録
               </Link>
             </nav>
           </div>
@@ -95,30 +71,30 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
-                href="/auth/signup?role=student" 
+                href="/auth/login" 
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
               >
-                学生として始める
+                今すぐ始める
               </Link>
               <Link 
-                href="/auth/signup?role=company" 
+                href="#features" 
                 className="border border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-50 transition"
               >
-                企業として参加する
+                詳細を見る
               </Link>
             </div>
           </div>
         </section>
 
         {/* 特徴セクション */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+        <section id="features" className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
           <div className="max-w-6xl mx-auto">
             <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
               プラットフォームの特徴
             </h3>
             <div className="grid md:grid-cols-3 gap-8">
               {/* 学生向け */}
-              <div className="text-center p-6">
+              <div className="text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -132,7 +108,7 @@ export default function Home() {
               </div>
 
               {/* 企業向け */}
-              <div className="text-center p-6">
+              <div className="text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h2M7 7h10M7 11h10M7 15h10" />
@@ -146,7 +122,7 @@ export default function Home() {
               </div>
 
               {/* 信頼性 */}
-              <div className="text-center p-6">
+              <div className="text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -172,7 +148,7 @@ export default function Home() {
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
                 <h4 className="font-semibold mb-2">アカウント登録</h4>
-                <p className="text-sm text-gray-600">学生または企業として登録</p>
+                <p className="text-sm text-gray-600">Googleアカウントまたはメールでログイン</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
@@ -192,6 +168,24 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* CTAセクション */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-blue-600">
+          <div className="max-w-4xl mx-auto text-center">
+            <h3 className="text-3xl font-bold text-white mb-4">
+              今すぐ始めませんか？
+            </h3>
+            <p className="text-xl text-blue-100 mb-8">
+              Googleアカウントまたはメールアドレスでかんたんにログインできます
+            </p>
+            <Link 
+              href="/auth/login" 
+              className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-medium hover:bg-gray-100 transition inline-block"
+            >
+              ログイン・新規登録
+            </Link>
+          </div>
+        </section>
       </main>
 
       {/* フッター */}
@@ -199,7 +193,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
-              <h5 className="text-lg font-semibold mb-4">日本学生アンバサダー協議会</h5>
+              <h5 className="text-lg font-semibold mb-4">学生アンバサダー協議会</h5>
               <p className="text-gray-400">
                 学生と企業をつなぐアンバサダープラットフォーム
               </p>
@@ -220,7 +214,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 日本学生アンバサダー協議会. All rights reserved.</p>
+            <p>&copy; 2024 学生アンバサダー協議会. All rights reserved.</p>
           </div>
         </div>
       </footer>

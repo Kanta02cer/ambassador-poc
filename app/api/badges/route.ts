@@ -1,60 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../src/lib/prisma';
 import { verifyToken, extractTokenFromHeader } from '../../../src/lib/auth';
-import { Prisma } from '../../../src/generated/prisma';
 
 // バッジ一覧取得
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const searchParams = request.nextUrl.searchParams;
+    const search = searchParams.get('search');
     const programId = searchParams.get('programId');
     const badgeType = searchParams.get('badgeType');
-    const skip = (page - 1) * limit;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const offset = (page - 1) * limit;
 
-    // 検索条件の構築
-    const where: Prisma.BadgeWhereInput = {};
+    // フィルター条件を構築
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search } },
+        { description: { contains: search } },
+      ];
+    }
 
     if (programId) {
       where.programId = parseInt(programId);
     }
 
     if (badgeType) {
-      where.badgeType = { contains: badgeType, mode: 'insensitive' };
+      where.badgeType = { contains: badgeType };
     }
 
-    // バッジ取得
-    const [badges, totalCount] = await Promise.all([
+    // バッジ一覧を取得
+    const [badges, total] = await Promise.all([
       prisma.badge.findMany({
         where,
         include: {
           program: {
+            include: {
+              company: true,
+            },
+          },
+          badgeRequests: {
             select: {
               id: true,
-              title: true,
-              company: {
-                select: {
-                  companyName: true,
-                  logoUrl: true,
-                },
-              },
-            },
-          },
-          _count: {
-            select: {
-              badgeRequests: {
-                where: {
-                  status: 'APPROVED',
-                },
-              },
+              status: true,
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        skip,
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
         take: limit,
       }),
       prisma.badge.count({ where }),
@@ -65,13 +60,12 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        totalCount,
-        totalPages: Math.ceil(totalCount / limit),
+        total,
+        pages: Math.ceil(total / limit),
       },
     });
-
   } catch (error) {
-    console.error('Badges fetch error:', error);
+    console.error('バッジ取得エラー:', error);
     return NextResponse.json(
       { error: 'バッジの取得に失敗しました' },
       { status: 500 }
